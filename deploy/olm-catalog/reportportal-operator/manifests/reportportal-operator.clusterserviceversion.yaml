@@ -17,7 +17,14 @@ metadata:
             "gateway_replicas": 1,
             "index_replicas": 1,
             "uat_image": "reportportal/service-authorization:5.2.1",
-            "ui_replicas": 1
+            "ui_replicas": 1,
+            "enable_pg_restic_backup": "yes",
+            "pg_restic_s3_bucket_init": "yes",
+            "pg_s3_bucket_name": "pgbackup-123123",
+            "pg_restic_password": "rp_user",
+            "es_s3_backup_dir":"s3_backup",
+            "es_snapshot_bucket":"es-snapshot-123123",
+            "es_backup_schedule":"@daily"
           }
         },
         {
@@ -48,16 +55,16 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
+    capabilities: Full Lifecycle
     categories: Application Runtime
     certified: "false"
-    containerImage: quay.io/waynesun09/rp5-operator:v0.0.2
-    createdAt: "2020-04-23 20:09:00"
+    containerImage: quay.io/waynesun09/rp5-operator:v0.0.3
+    createdAt: "2020-06-26 10:30:00"
     description: ReportPortal is a test automation analytics platform. ReportPortal
       Operator for instantiating the Report Portal services and required dependencies.
     repository: https://github.com/waynesun09/reportportal-operator
     support: waynesun09
-  name: reportportal-operator.v0.0.2
+  name: reportportal-operator.v0.0.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -124,6 +131,41 @@ spec:
         path: gateway_replicas
         x-descriptors:
         - urn:alm:descriptor:tectonic.ui:number
+      - description: Whether to enable Postgres backup via restic, yes or no
+        displayName: Whether to enable Postgres backup via restic
+        path: enable_pg_restic_backup
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Whether to init the Postgres bucket, yes or no
+        displayName: Whether to init the Postgres bucket
+        path: pg_restic_s3_bucket_init
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket name, need be unique and valid bucket name
+        displayName: The s3 Postgres bucket name
+        path: pg_s3_bucket_name
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket restic password
+        displayName: Restic password
+        path: pg_restic_password
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot path dir, if set the snapshot will be enabled
+        displayName: Elasticsearch snapshot path dir
+        path: es_s3_backup_dir
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot s3 bucket name
+        displayName: Elasticsearch snapshot s3 bucket name
+        path: es_snapshot_bucket
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot to s3 bucket schedule, crontab schedule format
+        displayName: Elasticsearch snapshot to s3 bucket schedule
+        path: es_backup_schedule
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
       statusDescriptors:
       - description: Conditions provided by deployment
         displayName: Conditions
@@ -156,7 +198,7 @@ spec:
                 - /usr/local/bin/ao-logs
                 - /tmp/ansible-operator/runner
                 - stdout
-                image: quay.io/waynesun09/rp5-operator:v0.0.2
+                image: quay.io/waynesun09/rp5-operator:v0.0.3
                 imagePullPolicy: Always
                 name: ansible
                 resources: {}
@@ -177,7 +219,7 @@ spec:
                   value: reportportal-operator
                 - name: ANSIBLE_GATHERING
                   value: explicit
-                image: quay.io/waynesun09/rp5-operator:v0.0.2
+                image: quay.io/waynesun09/rp5-operator:v0.0.3
                 imagePullPolicy: Always
                 name: operator
                 resources: {}
@@ -303,6 +345,7 @@ spec:
           - batch
           resources:
           - jobs
+          - cronjobs
           verbs:
           - create
           - delete
@@ -350,5 +393,5 @@ spec:
   maturity: alpha
   provider:
     name: waynesun09
-  replaces: reportportal-operator.v0.0.1
-  version: 0.0.2
+  replaces: reportportal-operator.v0.0.2
+  version: 0.0.3
